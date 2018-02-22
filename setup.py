@@ -84,136 +84,144 @@ def list_directory_files(dirpath, exclude_dirs=(), exclude_files=()):
 
 ################################################################################
 
+def parse_requirements(fname='requirements.txt', pinned=False):
+    """
+    Parse the package dependencies listed in a requirements file.
 
-setuptools.setup(
-    name='smqtk',
-    version=version,
-    description='Python toolkit for pluggable algorithms and data structures '
-                'for multimedia-based machine learning',
-    long_description=long_description,
-    author='Kitware, Inc.',
-    author_email='smqtk-developers@kitware.com',
-    url='https://github.com/Kitware/SMQTK',
-    license='BSD 3-Clause',
-    classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: BSD License',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Unix',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Topic :: Scientific/Engineering :: Artificial Intelligence',
-        'Topic :: Scientific/Engineering :: Image Recognition'
-    ],
-    platforms=[
-        'Linux',
-        'Max OS-X',
-        'Unix',
-        # 'Windows',  # Not tested yet
-    ],
+    CommandLine:
+        python -c "import setup; print(setup.parse_requirements())"
+    """
+    from os.path import dirname, join, exists
+    require_fpath = join(dirname(__file__), fname)
+    # This breaks on pip install, so check that it exists.
+    if exists(require_fpath):
+        with open(require_fpath, 'r') as f:
+            lines = [line.strip() for line in f.readlines()]
+            lines = [line for line in lines if not line.startswith('#')]
+            if not pinned:
+                # Remove version pins
+                lines = [line.split('==')[0] for line in lines]
+            return lines
+    return []
 
-    package_dir={'': PYTHON_SRC},
-    packages=setuptools.find_packages(PYTHON_SRC),
-    package_data={
-        'smqtk': find_package_datafiles(os.path.join(PYTHON_SRC, 'smqtk'))
-    },
-    data_files=list_directory_files('etc'),
 
-    setup_requires=[
-        'setuptools',
-    ],
-    install_requires=[
-        'flask',
-        'flask-basicauth',
-        'flask-login',
-        'Flask-Cors',
-        'imageio',
-        'jinja2',
-        'matplotlib',
-        'numpy',
-        # Pinning Pillow version due to large-image conversion issue in versions
-        # 4.1.0 and up.
-        'pillow==4.0.0',
-        'pymongo',
-        'requests',
-        'scikit-learn',
-        'scipy',
-        'six',
-    ],
-    extras_require={
-        # Various optional dependencies for plugins
-        'docs': [
-            'livereload',
+if __name__ == '__main__':
+
+    install_requires = parse_requirements(fname='requirements.txt',
+                                          pinned=False)
+
+    setuptools.setup(
+        name='smqtk',
+        version=version,
+        description='Python toolkit for pluggable algorithms and data structures '
+                    'for multimedia-based machine learning',
+        long_description=long_description,
+        author='Kitware, Inc.',
+        author_email='smqtk-developers@kitware.com',
+        url='https://github.com/Kitware/SMQTK',
+        license='BSD 3-Clause',
+        classifiers=[
+            'Development Status :: 3 - Alpha',
+            'Intended Audience :: Developers',
+            'Intended Audience :: Science/Research',
+            'License :: OSI Approved :: BSD License',
+            'Operating System :: MacOS :: MacOS X',
+            'Operating System :: Unix',
+            'Programming Language :: Python :: 2',
+            'Programming Language :: Python :: 2.7',
+            'Topic :: Scientific/Engineering :: Artificial Intelligence',
+            'Topic :: Scientific/Engineering :: Image Recognition'
+        ],
+        platforms=[
+            'Linux',
+            'Max OS-X',
+            'Unix',
+            # 'Windows',  # Not tested yet
+        ],
+
+        package_dir={'': PYTHON_SRC},
+        packages=setuptools.find_packages(PYTHON_SRC),
+        package_data={
+            'smqtk': find_package_datafiles(os.path.join(PYTHON_SRC, 'smqtk'))
+        },
+        data_files=list_directory_files('etc'),
+
+        setup_requires=[
+            'setuptools',
+        ],
+        install_requires=install_requires,
+        extras_require={
+            # Various optional dependencies for plugins
+            'docs': [
+                'livereload',
+                'mock',
+                'sphinx',
+                'sphinx-argparse',
+                'sphinx-prompt',
+                'sphinx_rtd_theme',
+            ],
+            'caffe': [
+                'protobuf',
+                'scikit-image',
+            ],
+            'magic': [
+                'file-magic',
+            ],
+            'flann': [
+                'pyflann>=1.8.4',
+            ],
+            'libmagic': [
+                'file-magic',
+            ],
+            'postgres': [
+                'psycopg2',
+            ],
+            'solr': [
+                'solrpy',
+            ],
+        },
+        tests_require=[
+            'coverage',
             'mock',
-            'sphinx',
-            'sphinx-argparse',
-            'sphinx-prompt',
-            'sphinx_rtd_theme',
+            'nose',
+            'nose-exclude'
         ],
-        'caffe': [
-            'protobuf',
-            'scikit-image',
-        ],
-        'magic': [
-            'file-magic',
-        ],
-        'flann': [
-            'pyflann>=1.8.4',
-        ],
-        'libmagic': [
-            'file-magic',
-        ],
-        'postgres': [
-            'psycopg2',
-        ],
-        'solr': [
-            'solrpy',
-        ],
-    },
-    tests_require=[
-        'coverage',
-        'mock',
-        'nose',
-        'nose-exclude'
-    ],
 
-    # See entry_points/console_scripts as the preferred method for publishing
-    #   executable scripts. Might have redesign how scripts are done if that is
-    #   to be used...
-    entry_points={
-        'console_scripts': [
-            'classifier_kfold_validation = \
-                smqtk.bin.classifier_kfold_validation\
-                :classifier_kfold_validation',
-            'classifier_model_validation = \
-                smqtk.bin.classifier_model_validation:main',
-            'classifyFiles = smqtk.bin.classifyFiles:main ',
-            'compute_classifications = smqtk.bin.compute_classifications:main',
-            'compute_hash_codes = smqtk.bin.compute_hash_codes:main',
-            'compute_many_descriptors = \
-                smqtk.bin.compute_many_descriptors:main',
-            'computeDescriptor = smqtk.bin.computeDescriptor:main',
-            'createFileIngest = smqtk.bin.createFileIngest:main',
-            'createGirderIngest = smqtk.bin.createGirderIngest:main',
-            'descriptors_to_svmtrain = \
-                smqtk.bin.descriptors_to_svmtrainfile:main',
-            'generate_image_transform = \
-                smqtk.bin.generate_image_transform:main',
-            'iqr_app_model_generation = \
-                smqtk.bin.iqr_app_model_generation:main',
-            'iqrTrainClassifier = smqtk.bin.iqrTrainClassifier:main',
-            'make_balltree = smqtk.bin.make_balltree:main',
-            'minibatch_kmeans_clusters = \
-                smqtk.bin.minibatch_kmeans_clusters:main',
-            'removeOldFiles = smqtk.bin.removeOldFiles:main',
-            'proxyManagerServer = smqtk.bin.proxyManagerServer:main',
-            'runApplication = smqtk.bin.runApplication:main',
-            'summarizePlugins = smqtk.bin.summarizePlugins:main',
-            'train_itq = smqtk.bin.train_itq:main',
-            'smqtk-nearest-neighbors = smqtk.bin.nearest_neighbors:main',
-            'smqtk-check-images = smqtk.bin.check_images:main'
-        ]
-    }
-)
+        # See entry_points/console_scripts as the preferred method for publishing
+        #   executable scripts. Might have redesign how scripts are done if that is
+        #   to be used...
+        entry_points={
+            'console_scripts': [
+                'classifier_kfold_validation = \
+                    smqtk.bin.classifier_kfold_validation\
+                    :classifier_kfold_validation',
+                'classifier_model_validation = \
+                    smqtk.bin.classifier_model_validation:main',
+                'classifyFiles = smqtk.bin.classifyFiles:main ',
+                'compute_classifications = smqtk.bin.compute_classifications:main',
+                'compute_hash_codes = smqtk.bin.compute_hash_codes:main',
+                'compute_many_descriptors = \
+                    smqtk.bin.compute_many_descriptors:main',
+                'computeDescriptor = smqtk.bin.computeDescriptor:main',
+                'createFileIngest = smqtk.bin.createFileIngest:main',
+                'createGirderIngest = smqtk.bin.createGirderIngest:main',
+                'descriptors_to_svmtrain = \
+                    smqtk.bin.descriptors_to_svmtrainfile:main',
+                'generate_image_transform = \
+                    smqtk.bin.generate_image_transform:main',
+                'iqr_app_model_generation = \
+                    smqtk.bin.iqr_app_model_generation:main',
+                'iqrTrainClassifier = smqtk.bin.iqrTrainClassifier:main',
+                'make_balltree = smqtk.bin.make_balltree:main',
+                'minibatch_kmeans_clusters = \
+                    smqtk.bin.minibatch_kmeans_clusters:main',
+                'removeOldFiles = smqtk.bin.removeOldFiles:main',
+                'proxyManagerServer = smqtk.bin.proxyManagerServer:main',
+                'runApplication = smqtk.bin.runApplication:main',
+                'summarizePlugins = smqtk.bin.summarizePlugins:main',
+                'train_itq = smqtk.bin.train_itq:main',
+                'smqtk-nearest-neighbors = smqtk.bin.nearest_neighbors:main',
+                'smqtk-check-images = smqtk.bin.check_images:main'
+            ]
+        }
+    )
